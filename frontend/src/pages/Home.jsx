@@ -53,8 +53,8 @@ export default function Home() {
 
           <p>
             {user
-              ? "You’re securely logged in."
-              : "Experience a modern authentication flow."}
+              ? "You’re securely logged in. 🚀 CI/CD working!"
+              : "Experience a modern authentication flow. 🚀 CI/CD working!"}
           </p>
         </motion.div>
       </div>
