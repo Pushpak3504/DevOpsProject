@@ -13,7 +13,27 @@ pipeline {
     stage("Checkout Code") {
       steps {
         git branch: 'main',
-            url: 'https://github.com/Pushpak3504/DevOpsProject.git'
+            url: 'https://github.com/<your-username>/auth-platform.git'
+      }
+    }
+
+    stage("SonarQube Analysis") {
+      steps {
+        withSonarQubeEnv('sonarqube') {
+          sh '''
+            sonar-scanner \
+              -Dsonar.projectKey=auth-platform \
+              -Dsonar.sources=frontend/src,backend/src
+          '''
+        }
+      }
+    }
+
+    stage("Quality Gate") {
+      steps {
+        timeout(time: 2, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
       }
     }
 
@@ -25,7 +45,7 @@ pipeline {
           mkdir -p ${FRONTEND_DIR}
         '
 
-        rsync -av frontend/ elliot@${FRONTEND_HOST}:${FRONTEND_DIR}/
+        rsync -av --delete frontend/ elliot@${FRONTEND_HOST}:${FRONTEND_DIR}/
 
         ssh elliot@${FRONTEND_HOST} '
           docker stop frontend || true
@@ -49,7 +69,7 @@ pipeline {
           mkdir -p ${BACKEND_DIR}
         '
 
-        rsync -av backend/ elliot@${BACKEND_HOST}:${BACKEND_DIR}/
+        rsync -av --delete backend/ elliot@${BACKEND_HOST}:${BACKEND_DIR}/
 
         ssh elliot@${BACKEND_HOST} '
           docker stop backend || true
@@ -80,10 +100,10 @@ pipeline {
 
   post {
     success {
-      echo "✅ Frontend and Backend deployed successfully"
+      echo "✅ SonarQube passed, deployment successful"
     }
     failure {
-      echo "❌ Deployment failed"
+      echo "❌ Pipeline failed (SonarQube or deploy)"
     }
   }
 }
