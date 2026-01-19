@@ -18,15 +18,18 @@ pipeline {
     }
 
     stage("SonarQube Analysis") {
-      steps {
-        withSonarQubeEnv('sonarqube') {
-          sh '''
-            sonar-scanner \
-              -Dsonar.projectKey=auth-platform \
-              -Dsonar.sources=frontend/src,backend/src
-          '''
+        steps {
+            withSonarQubeEnv('sonarqube') {
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+                    sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=auth-platform \
+                        -Dsonar.sources=frontend/src,backend/src
+                    """
+                }
+            }
         }
-      }
     }
 
     stage("Quality Gate") {
