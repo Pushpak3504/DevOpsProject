@@ -10,6 +10,8 @@ pipeline {
 
     stages {
 
+        /* ===================== CHECKOUT ===================== */
+
         stage("Checkout Code") {
             steps {
                 git branch: 'main',
@@ -26,8 +28,8 @@ pipeline {
                         def scannerHome = tool 'sonar-scanner'
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=auth-platform \
-                            -Dsonar.sources=frontend/src,backend/src
+                              -Dsonar.projectKey=auth-platform \
+                              -Dsonar.sources=frontend/src,backend/src
                         """
                     }
                 }
@@ -42,7 +44,7 @@ pipeline {
 
         /* ===================== TRIVY SECURITY ===================== */
 
-        stage("Trivy Code Scan (FS)") {
+        stage("Trivy Code Scan (Filesystem)") {
             steps {
                 sh """
                 trivy fs \
@@ -54,11 +56,11 @@ pipeline {
             }
         }
 
-        stage("Trivy Frontend Container Scan") {
+        stage("Trivy Frontend Image Scan") {
             steps {
                 sh """
                 ssh elliot@${FRONTEND_HOST} '
-                  trivy container frontend \
+                  trivy image frontend \
                     --severity HIGH,CRITICAL \
                     --format table \
                     --output /home/elliot/trivy-frontend-report.txt
@@ -67,11 +69,11 @@ pipeline {
             }
         }
 
-        stage("Trivy Backend Container Scan") {
+        stage("Trivy Backend Image Scan") {
             steps {
                 sh """
                 ssh elliot@${BACKEND_HOST} '
-                  trivy container backend \
+                  trivy image backend \
                     --severity HIGH,CRITICAL \
                     --format table \
                     --output /home/elliot/trivy-backend-report.txt
