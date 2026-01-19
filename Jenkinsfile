@@ -10,16 +10,12 @@ pipeline {
 
     stages {
 
-        /* ===================== CHECKOUT ===================== */
-
         stage("Checkout Code") {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/Pushpak3504/DevOpsProject.git'
             }
         }
-
-        /* ===================== SONARQUBE ===================== */
 
         stage("SonarQube Analysis") {
             steps {
@@ -42,7 +38,7 @@ pipeline {
             }
         }
 
-        /* ===================== TRIVY SECURITY ===================== */
+        /* ---------- TRIVY CODE SCAN ---------- */
 
         stage("Trivy Code Scan (Filesystem)") {
             steps {
@@ -56,43 +52,7 @@ pipeline {
             }
         }
 
-        stage("Trivy Frontend Image Scan") {
-            steps {
-                sh """
-                ssh elliot@${FRONTEND_HOST} '
-                  trivy image frontend \
-                    --severity HIGH,CRITICAL \
-                    --format table \
-                    --output /home/elliot/trivy-frontend-report.txt
-                '
-                """
-            }
-        }
-
-        stage("Trivy Backend Image Scan") {
-            steps {
-                sh """
-                ssh elliot@${BACKEND_HOST} '
-                  trivy image backend \
-                    --severity HIGH,CRITICAL \
-                    --format table \
-                    --output /home/elliot/trivy-backend-report.txt
-                '
-                """
-            }
-        }
-
-        stage("Collect Trivy Reports") {
-            steps {
-                sh """
-                scp elliot@${FRONTEND_HOST}:/home/elliot/trivy-frontend-report.txt .
-                scp elliot@${BACKEND_HOST}:/home/elliot/trivy-backend-report.txt .
-                """
-                archiveArtifacts artifacts: '*.txt', fingerprint: true
-            }
-        }
-
-        /* ===================== DEPLOY ===================== */
+        /* ---------- DEPLOY & BUILD ---------- */
 
         stage("Deploy Frontend") {
             steps {
@@ -151,6 +111,44 @@ pipeline {
                     auth-backend
                 '
                 """
+            }
+        }
+
+        /* ---------- TRIVY IMAGE SCANS (AFTER BUILD) ---------- */
+
+        stage("Trivy Frontend Image Scan") {
+            steps {
+                sh """
+                ssh elliot@${FRONTEND_HOST} '
+                  trivy image glass-frontend \
+                    --severity HIGH,CRITICAL \
+                    --format table \
+                    --output /home/elliot/trivy-frontend-report.txt
+                '
+                """
+            }
+        }
+
+        stage("Trivy Backend Image Scan") {
+            steps {
+                sh """
+                ssh elliot@${BACKEND_HOST} '
+                  trivy image auth-backend \
+                    --severity HIGH,CRITICAL \
+                    --format table \
+                    --output /home/elliot/trivy-backend-report.txt
+                '
+                """
+            }
+        }
+
+        stage("Collect Trivy Reports") {
+            steps {
+                sh """
+                scp elliot@${FRONTEND_HOST}:/home/elliot/trivy-frontend-report.txt .
+                scp elliot@${BACKEND_HOST}:/home/elliot/trivy-backend-report.txt .
+                """
+                archiveArtifacts artifacts: '*.txt', fingerprint: true
             }
         }
     }
