@@ -10,12 +10,38 @@ pipeline {
 
     stages {
 
+        /* ===================== CHECKOUT ===================== */
+
         stage("Checkout Code") {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/Pushpak3504/DevOpsProject.git'
             }
         }
+
+        /* ===================== NPM AUDIT ===================== */
+
+        stage("npm audit (Frontend)") {
+            steps {
+                sh """
+                cd frontend
+                npm install --package-lock-only
+                npm audit --audit-level=critical > ../npm-audit-frontend.txt || true
+                """
+            }
+        }
+
+        stage("npm audit (Backend)") {
+            steps {
+                sh """
+                cd backend
+                npm install --package-lock-only
+                npm audit --audit-level=critical > ../npm-audit-backend.txt || true
+                """
+            }
+        }
+
+        /* ===================== SONARQUBE ===================== */
 
         stage("SonarQube Analysis") {
             steps {
@@ -38,7 +64,7 @@ pipeline {
             }
         }
 
-        /* ---------- TRIVY CODE SCAN ---------- */
+        /* ===================== TRIVY CODE SCAN ===================== */
 
         stage("Trivy Code Scan (Filesystem)") {
             steps {
@@ -52,7 +78,7 @@ pipeline {
             }
         }
 
-        /* ---------- DEPLOY & BUILD ---------- */
+        /* ===================== DEPLOY ===================== */
 
         stage("Deploy Frontend") {
             steps {
@@ -114,7 +140,7 @@ pipeline {
             }
         }
 
-        /* ---------- TRIVY IMAGE SCANS (AFTER BUILD) ---------- */
+        /* ===================== TRIVY IMAGE SCANS ===================== */
 
         stage("Trivy Frontend Image Scan") {
             steps {
@@ -142,7 +168,9 @@ pipeline {
             }
         }
 
-        stage("Collect Trivy Reports") {
+        /* ===================== COLLECT REPORTS ===================== */
+
+        stage("Collect Security Reports") {
             steps {
                 sh """
                 scp elliot@${FRONTEND_HOST}:/home/elliot/trivy-frontend-report.txt .
@@ -155,7 +183,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ CI/CD + SonarQube + Trivy completed successfully"
+            echo "✅ CI/CD + npm audit + SonarQube + Trivy completed successfully"
         }
         failure {
             echo "❌ Pipeline failed"
