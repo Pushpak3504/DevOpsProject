@@ -23,21 +23,21 @@ pipeline {
 
         stage("npm audit (Frontend)") {
             steps {
-                sh """
+                sh '''
                 cd frontend
                 npm install --package-lock-only
                 npm audit --json > ../npm-audit-frontend.json || true
-                """
+                '''
             }
         }
 
         stage("npm audit (Backend)") {
             steps {
-                sh """
+                sh '''
                 cd backend
                 npm install --package-lock-only
                 npm audit --json > ../npm-audit-backend.json || true
-                """
+                '''
             }
         }
 
@@ -68,17 +68,17 @@ pipeline {
 
         stage("Trivy Code Scan (Filesystem)") {
             steps {
-                sh """
+                sh '''
                 trivy fs . \
                   --security-checks vuln,secret,config \
                   --severity HIGH,CRITICAL \
                   --format json \
                   --output trivy-code-report.json || true
-                """
+                '''
             }
         }
 
-        /* ===================== DEPLOY ===================== */
+        /* ===================== DEPLOY FRONTEND ===================== */
 
         stage("Deploy Frontend") {
             steps {
@@ -103,6 +103,8 @@ pipeline {
                 """
             }
         }
+
+        /* ===================== DEPLOY BACKEND ===================== */
 
         stage("Deploy Backend") {
             steps {
@@ -181,36 +183,40 @@ pipeline {
         }
     }
 
-		post {
-    		success {
-        		emailext(
-            		subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            		body: """
-            		<h2>Pipeline Successful ✅</h2>
-            		<p><b>Job:</b> ${env.JOB_NAME}</p>
-            		<p><b>Build:</b> #${env.BUILD_NUMBER}</p>
-            		<p><b>Status:</b> SUCCESS</p>
-            		<p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-            		<p>Regards,<br>Jenkins</p>
-            		""",
-            		to: "bhosale6416@gmail.com"
-        		)
-    		}
+    /* ===================== EMAIL NOTIFICATIONS ===================== */
 
-    		failure {
-        		emailext(
-            		subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            		body: """
-            		<h2>Pipeline Failed ❌</h2>
-            		<p><b>Job:</b> ${env.JOB_NAME}</p>
-            		<p><b>Build:</b> #${env.BUILD_NUMBER}</p>
-            		<p><b>Status:</b> FAILED</p>
-            		<p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-            		<p>Please check console logs.</p>
-            		""",
-            		to: "bhosale6416@gmail.com",
-            		attachLog: true
-        		)
-    		}
-		}
+    post {
+        success {
+            emailext(
+                to: 'bhosale6416@gmail.com',
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                mimeType: 'text/html',
+                body: """
+                <h2>Pipeline Successful ✅</h2>
+                <p><b>Job:</b> ${env.JOB_NAME}</p>
+                <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                <p><b>Status:</b> SUCCESS</p>
+                <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                <p>Regards,<br><b>Jenkins CI</b></p>
+                """
+            )
+        }
+
+        failure {
+            emailext(
+                to: 'bhosale6416@gmail.com',
+                subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                mimeType: 'text/html',
+                attachLog: true,
+                body: """
+                <h2>Pipeline Failed ❌</h2>
+                <p><b>Job:</b> ${env.JOB_NAME}</p>
+                <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                <p><b>Status:</b> FAILED</p>
+                <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                <p>Please check attached console logs.</p>
+                """
+            )
+        }
+    }
 }
