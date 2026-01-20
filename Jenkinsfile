@@ -26,7 +26,7 @@ pipeline {
                 sh """
                 cd frontend
                 npm install --package-lock-only
-                npm audit --audit-level=critical > ../npm-audit-frontend.txt || true
+                npm audit --json > ../npm-audit-frontend.json || true
                 """
             }
         }
@@ -36,7 +36,7 @@ pipeline {
                 sh """
                 cd backend
                 npm install --package-lock-only
-                npm audit --audit-level=critical > ../npm-audit-backend.txt || true
+                npm audit --json > ../npm-audit-backend.json || true
                 """
             }
         }
@@ -49,9 +49,9 @@ pipeline {
                     script {
                         def scannerHome = tool 'sonar-scanner'
                         sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                              -Dsonar.projectKey=auth-platform \
-                              -Dsonar.sources=frontend/src,backend/src
+                        ${scannerHome}/bin/sonar-scanner \
+                          -Dsonar.projectKey=auth-platform \
+                          -Dsonar.sources=frontend/src,backend/src
                         """
                     }
                 }
@@ -69,11 +69,11 @@ pipeline {
         stage("Trivy Code Scan (Filesystem)") {
             steps {
                 sh """
-                trivy fs \
+                trivy fs . \
                   --security-checks vuln,secret,config \
                   --severity HIGH,CRITICAL \
-                  --format table \
-                  --output trivy-code-report.txt .
+                  --format json \
+                  --output trivy-code-report.json || true
                 """
             }
         }
@@ -148,8 +148,8 @@ pipeline {
                 ssh elliot@${FRONTEND_HOST} '
                   trivy image glass-frontend \
                     --severity HIGH,CRITICAL \
-                    --format table \
-                    --output /home/elliot/trivy-frontend-report.txt
+                    --format json \
+                    --output /home/elliot/trivy-frontend-report.json || true
                 '
                 """
             }
@@ -161,8 +161,8 @@ pipeline {
                 ssh elliot@${BACKEND_HOST} '
                   trivy image auth-backend \
                     --severity HIGH,CRITICAL \
-                    --format table \
-                    --output /home/elliot/trivy-backend-report.txt
+                    --format json \
+                    --output /home/elliot/trivy-backend-report.json || true
                 '
                 """
             }
@@ -173,10 +173,10 @@ pipeline {
         stage("Collect Security Reports") {
             steps {
                 sh """
-                scp elliot@${FRONTEND_HOST}:/home/elliot/trivy-frontend-report.txt .
-                scp elliot@${BACKEND_HOST}:/home/elliot/trivy-backend-report.txt .
+                scp elliot@${FRONTEND_HOST}:/home/elliot/trivy-frontend-report.json .
+                scp elliot@${BACKEND_HOST}:/home/elliot/trivy-backend-report.json .
                 """
-                archiveArtifacts artifacts: '*.txt', fingerprint: true
+                archiveArtifacts artifacts: '*.json', fingerprint: true
             }
         }
     }
