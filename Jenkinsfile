@@ -66,7 +66,7 @@ pipeline {
 
         /* ===================== TRIVY CODE SCAN ===================== */
 
-        stage("Trivy Code Scan (Filesystem)") {
+        stage("Trivy Code Scan") {
             steps {
                 sh '''
                 trivy fs . \
@@ -142,80 +142,55 @@ pipeline {
             }
         }
 
-        /* ===================== TRIVY IMAGE SCANS ===================== */
-
-        stage("Trivy Frontend Image Scan") {
-            steps {
-                sh """
-                ssh elliot@${FRONTEND_HOST} '
-                  trivy image glass-frontend \
-                    --severity HIGH,CRITICAL \
-                    --format json \
-                    --output /home/elliot/trivy-frontend-report.json || true
-                '
-                """
-            }
-        }
-
-        stage("Trivy Backend Image Scan") {
-            steps {
-                sh """
-                ssh elliot@${BACKEND_HOST} '
-                  trivy image auth-backend \
-                    --severity HIGH,CRITICAL \
-                    --format json \
-                    --output /home/elliot/trivy-backend-report.json || true
-                '
-                """
-            }
-        }
-
         /* ===================== COLLECT REPORTS ===================== */
 
-        stage("Collect Security Reports") {
+        stage("Archive Reports") {
             steps {
-                sh """
-                scp elliot@${FRONTEND_HOST}:/home/elliot/trivy-frontend-report.json .
-                scp elliot@${BACKEND_HOST}:/home/elliot/trivy-backend-report.json .
-                """
                 archiveArtifacts artifacts: '*.json', fingerprint: true
             }
         }
     }
 
-    /* ===================== EMAIL NOTIFICATIONS ===================== */
+    /* ===================== EMAIL NOTIFICATION (SIMPLE) ===================== */
 
     post {
         success {
-            emailext(
+            mail(
                 to: 'pushpaksumit001@gmail.com',
-                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                mimeType: 'text/html',
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                <h2>Pipeline Successful ✅</h2>
-                <p><b>Job:</b> ${env.JOB_NAME}</p>
-                <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
-                <p><b>Status:</b> SUCCESS</p>
-                <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                <p>Regards,<br><b>Jenkins CI</b></p>
-                """
+Pipeline SUCCESS ✅
+
+Job Name : ${env.JOB_NAME}
+Build No : ${env.BUILD_NUMBER}
+Status   : SUCCESS
+
+Build URL:
+${env.BUILD_URL}
+
+-- Jenkins
+"""
             )
         }
 
         failure {
-            emailext(
+            mail(
                 to: 'pushpaksumit001@gmail.com',
-                subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                mimeType: 'text/html',
-                attachLog: true,
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                <h2>Pipeline Failed ❌</h2>
-                <p><b>Job:</b> ${env.JOB_NAME}</p>
-                <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
-                <p><b>Status:</b> FAILED</p>
-                <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                <p>Please check attached console logs.</p>
-                """
+Pipeline FAILED ❌
+
+Job Name : ${env.JOB_NAME}
+Build No : ${env.BUILD_NUMBER}
+Status   : FAILED
+
+Build URL:
+${env.BUILD_URL}
+
+Please check Jenkins console logs.
+
+-- Jenkins
+"""
             )
         }
     }
