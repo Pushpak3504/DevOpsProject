@@ -181,12 +181,36 @@ pipeline {
         }
     }
 
-    post {
-        success {
-            echo "✅ CI/CD + npm audit + SonarQube + Trivy completed successfully"
-        }
-        failure {
-            echo "❌ Pipeline failed"
-        }
-    }
+		post {
+    		success {
+        		emailext(
+            		subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            		body: """
+            		<h2>Pipeline Successful ✅</h2>
+            		<p><b>Job:</b> ${env.JOB_NAME}</p>
+            		<p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+            		<p><b>Status:</b> SUCCESS</p>
+            		<p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+            		<p>Regards,<br>Jenkins</p>
+            		""",
+            		to: "bhosale6416@gmail.com"
+        		)
+    		}
+
+    		failure {
+        		emailext(
+            		subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            		body: """
+            		<h2>Pipeline Failed ❌</h2>
+            		<p><b>Job:</b> ${env.JOB_NAME}</p>
+            		<p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+            		<p><b>Status:</b> FAILED</p>
+            		<p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+            		<p>Please check console logs.</p>
+            		""",
+            		to: "bhosale6416@gmail.com",
+            		attachLog: true
+        		)
+    		}
+		}
 }
