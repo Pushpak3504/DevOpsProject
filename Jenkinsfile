@@ -188,7 +188,7 @@ pipeline {
     post {
         success {
             emailext(
-                to: 'bhosale6416@gmail.com',
+                to: 'pushpaksumit001@gmail.com',
                 subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 mimeType: 'text/html',
                 body: """
@@ -204,7 +204,7 @@ pipeline {
 
         failure {
             emailext(
-                to: 'bhosale6416@gmail.com',
+                to: 'pushpaksumit001@gmail.com',
                 subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 mimeType: 'text/html',
                 attachLog: true,
