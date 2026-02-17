@@ -35,7 +35,7 @@ The platform enables:
 * * *
 
 ## 🧠 System Architecture (High-Level)
-image here 
+![System Architecture](Diagrams/1.png)
 
 * * *
 
@@ -78,7 +78,7 @@ image here
 
 ### 🔁 Flow Diagram
 
-image here 
+![Flow_Diagram](Diagrams/2.png)
 
 * * *
 
@@ -99,7 +99,7 @@ image here
 
 ## ⚙️ DevSecOps CI/CD Architecture
 
-image here
+![CI/CD Architecture](Diagrams/3.png)
 
 * * *
 
@@ -122,7 +122,7 @@ image here
 
 ## 📊 Monitoring & Observability Architecture
 
-image here
+![Monitoring Architecture](Diagrams/4.png)
 
 ### 📈 Metrics Collected
 
